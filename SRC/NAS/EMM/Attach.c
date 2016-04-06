@@ -1835,6 +1835,7 @@ _emm_attach_update (
       memcpy (ctx->guti, guti, sizeof (guti_t));
     }
   } else {
+    OAILOG_INFO (LOG_NAS_EMM, "EMM-CTX - guti nor provided by UE\n");
     if (!ctx->guti ) {
       ctx->guti = (guti_t *) CALLOC_CHECK (1, sizeof (guti_t));
     } else {
@@ -1947,6 +1948,7 @@ _emm_attach_update (
       }
     }
     ctx->tai_list.n_tais = j;
+    ctx->tai_list.list_type = TRACKING_AREA_IDENTITY_LIST_TYPE_ONE_PLMN_CONSECUTIVE_TACS;
   }
   /*
    * The IMSI if provided by the UE
