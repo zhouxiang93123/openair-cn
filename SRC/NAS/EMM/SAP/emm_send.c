@@ -201,6 +201,9 @@ emm_send_attach_accept (
    */
   size += TRACKING_AREA_IDENTITY_LIST_MINIMUM_LENGTH;
   emm_msg->tailist.typeoflist = msg->tai_list.list_type;
+
+  OAILOG_INFO (LOG_NAS_EMM, "EMMAS-SAP - msg->tai_list.list_type = %d\n", msg->tai_list.list_type);
+
   emm_msg->tailist.numberofelements = msg->tai_list.n_tais - 1;
   emm_msg->tailist.mccdigit1[0] = msg->tai_list.tai[0].plmn.mcc_digit1;
   emm_msg->tailist.mccdigit2[0] = msg->tai_list.tai[0].plmn.mcc_digit2;
