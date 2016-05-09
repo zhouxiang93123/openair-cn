@@ -56,6 +56,10 @@
 #define SGW_CONFIG_STRING_MSC_LOG_LEVEL                         "MSC_LOG_LEVEL"
 #define SGW_CONFIG_STRING_ITTI_LOG_LEVEL                        "ITTI_LOG_LEVEL"
 
+#define SGW_CONFIG_STRING_PCO_ENFORCE_SUB                       "PCO_ENFORCE_OPTIONS"
+#define SGW_CONFIG_STRING_PCO_IP_ENFORCE                        "SGW_PCO_IP_ENFORCE"
+#define SGW_CONFIG_STRING_PCO_DNS_SERVER_ENFORCE                "SGW_PCO_DNS_SERVER_ENFORCE"
+
 #define PGW_CONFIG_STRING_PGW_CONFIG                            "P-GW"
 #define PGW_CONFIG_STRING_NETWORK_INTERFACES_CONFIG             "NETWORK_INTERFACES"
 #define PGW_CONFIG_STRING_PGW_INTERFACE_NAME_FOR_S5_S8          "PGW_INTERFACE_NAME_FOR_S5_S8"
@@ -100,6 +104,13 @@ typedef struct sgw_config_s {
   int sgw_udp_port_for_S1u_S12_S4_up;
 
   bool       local_to_eNB;
+
+
+  struct sgw_pco_enforce_s{
+    bool      pco_enforce_ip;
+    bool      pco_enfore_dns_server;
+  }sgw_pco_enforce;
+
 } sgw_config_t;
 
 // may be more

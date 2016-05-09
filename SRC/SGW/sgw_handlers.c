@@ -344,6 +344,9 @@ sgw_handle_gtpv1uCreateTunnelResp (
   pco_flat_t                             *in_pco_p = NULL;
   uint8_t                                 address_allocation_via_nas_signalling = false;
   int                                     rv = 0;
+  bool                                    pco_dns_server_set = false;
+  bool                                    pco_internet_protocol_control_protocol_set = false;
+  bool                                    ipcp_out_length_set = false;
 
   OAILOG_FUNC_IN(LOG_SPGW_APP);
 #if EPC_BUILD
@@ -400,6 +403,7 @@ sgw_handle_gtpv1uCreateTunnelResp (
           ipcp_remaining_length = ipcp_length - 1 - 1 - 2;
           ipcp_out_length = 1 + 1 + 2;
           // Protocol Id: Internet Protocol Control Protocol ...
+          pco_internet_protocol_control_protocol_set = true;
           sgi_create_endpoint_resp.pco.byte[pco_out_index++] = (uint8_t) (pi_or_ci >> 8);
           sgi_create_endpoint_resp.pco.byte[pco_out_index++] = (uint8_t) (pi_or_ci & 0x00FF);
 
@@ -469,6 +473,7 @@ sgw_handle_gtpv1uCreateTunnelResp (
           }
 
           // ... continuing Protocol Id: Internet Protocol Control Protocol
+          ipcp_out_length_set = true;
           sgi_create_endpoint_resp.pco.byte[pco_out_index++] = ipcp_out_length; // option length
           break;
 
@@ -486,7 +491,11 @@ sgw_handle_gtpv1uCreateTunnelResp (
           break;
 
         case PCO_CI_DNS_SERVER_IPV4_ADDRESS_REQUEST:
+          // Set to true, so that DNS won't be added twice
+          pco_dns_server_set = true;
+
           // PPP IP Control Protocol
+
           sgi_create_endpoint_resp.pco.byte[pco_out_index++] = ipcp_out_code;
           sgi_create_endpoint_resp.pco.byte[pco_out_index++] = ipcp_identifier;
           sgi_create_endpoint_resp.pco.byte[pco_out_index++] = (uint8_t) (ipcp_out_length >> 8);
@@ -529,6 +538,57 @@ sgw_handle_gtpv1uCreateTunnelResp (
       }                         // while (length_in_pco >= 3) {
     }                           // if ((length_in_pco > 0) && (in_pco_p->byte[2] & 0x80)) {
 
+
+
+    /*
+     * Force DNS config
+     */
+    if (spgw_config.sgw_config.sgw_pco_enforce.pco_enfore_dns_server == true && pco_dns_server_set != true)
+    {
+        OAILOG_WARNING (LOG_SPGW_APP, "Force PCO DNS config\n");
+        if (pco_internet_protocol_control_protocol_set != true)
+        {
+         sgi_create_endpoint_resp.pco.byte[pco_out_index++] = (uint8_t) (PCO_PI_IPCP >> 8);
+         sgi_create_endpoint_resp.pco.byte[pco_out_index++] = (uint8_t) (PCO_PI_IPCP & 0x00FF);
+        }
+
+        if (ipcp_out_length_set != true)
+        {
+        sgi_create_endpoint_resp.pco.byte[pco_out_index++] = 0x10;
+        }
+
+        ipcp_out_dns_prim_ipv4_addr = spgw_config.pgw_config.ipv4.default_dns_v4;
+        ipcp_out_dns_sec_ipv4_addr = spgw_config.pgw_config.ipv4.default_dns_sec_v4;
+        ipcp_out_code = IPCP_CODE_CONFIGURE_NACK;
+        ipcp_identifier = 0x00;
+        ipcp_out_length = 0x0010;
+
+        // PPP IP Control Protocol
+        sgi_create_endpoint_resp.pco.byte[pco_out_index++]   = ipcp_out_code;
+        sgi_create_endpoint_resp.pco.byte[pco_out_index++]   = ipcp_identifier;
+        sgi_create_endpoint_resp.pco.byte[pco_out_index++]   = (uint8_t)(ipcp_out_length >> 8);
+        sgi_create_endpoint_resp.pco.byte[pco_out_index++]   = (uint8_t)(ipcp_out_length & 0x00FF);
+
+       if (ipcp_out_dns_prim_ipv4_addr != 0xFFFFFFFF) {
+        sgi_create_endpoint_resp.pco.byte[pco_out_index++] = IPCP_OPTION_PRIMARY_DNS_SERVER_IP_ADDRESS;
+        sgi_create_endpoint_resp.pco.byte[pco_out_index++] = 6;
+        sgi_create_endpoint_resp.pco.byte[pco_out_index++] = (uint8_t)(ipcp_out_dns_prim_ipv4_addr  & 0x000000FF);
+        sgi_create_endpoint_resp.pco.byte[pco_out_index++] = (uint8_t)((ipcp_out_dns_prim_ipv4_addr >> 8 ) & 0x000000FF);
+        sgi_create_endpoint_resp.pco.byte[pco_out_index++] = (uint8_t)((ipcp_out_dns_prim_ipv4_addr >> 16 ) & 0x000000FF);
+        sgi_create_endpoint_resp.pco.byte[pco_out_index++] = (uint8_t)((ipcp_out_dns_prim_ipv4_addr >> 24 ) & 0x000000FF);
+       }
+       if (ipcp_out_dns_sec_ipv4_addr != 0xFFFFFFFF) {
+        sgi_create_endpoint_resp.pco.byte[pco_out_index++] = IPCP_OPTION_SECONDARY_DNS_SERVER_IP_ADDRESS;
+        sgi_create_endpoint_resp.pco.byte[pco_out_index++] = 6;
+        sgi_create_endpoint_resp.pco.byte[pco_out_index++] = (uint8_t)(ipcp_out_dns_sec_ipv4_addr  & 0x000000FF);
+        sgi_create_endpoint_resp.pco.byte[pco_out_index++] = (uint8_t)((ipcp_out_dns_sec_ipv4_addr >> 8 ) & 0x000000FF);
+        sgi_create_endpoint_resp.pco.byte[pco_out_index++] = (uint8_t)((ipcp_out_dns_sec_ipv4_addr >> 16 ) & 0x000000FF);
+        sgi_create_endpoint_resp.pco.byte[pco_out_index++] = (uint8_t)((ipcp_out_dns_sec_ipv4_addr >> 24 ) & 0x000000FF);
+       }
+
+    }
+
+
     sgi_create_endpoint_resp.pco.length = pco_out_index;
     sgi_create_endpoint_resp.pco.byte[1] = pco_out_index - 2;
     //--------------------------------------------------------------------------
@@ -538,6 +598,11 @@ sgw_handle_gtpv1uCreateTunnelResp (
     sgi_create_endpoint_resp.eps_bearer_id = endpoint_created_pP->eps_bearer_id;
     // TO DO NOW
     sgi_create_endpoint_resp.paa.pdn_type = new_bearer_ctxt_info_p->sgw_eps_bearer_context_information.saved_message.pdn_type;
+
+    // Enforce PCO Option for enforced IP address
+    if (spgw_config.sgw_config.sgw_pco_enforce.pco_enforce_ip == true){
+      address_allocation_via_nas_signalling = true;
+    }
 
     switch (sgi_create_endpoint_resp.paa.pdn_type) {
     case IPv4_OR_v6:

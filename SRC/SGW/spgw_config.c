@@ -219,6 +219,45 @@ spgw_config_process (
 }
 
 
+void
+spgw_config_set_pco_option(
+   config_setting_t *setting_sgw,
+   struct sgw_pco_enforce_s * sgw_pco_enfore)
+{
+    config_setting_t                       *subsetting = NULL;
+    const char                             *astring = NULL;
+    // setting PCO config to default
+    sgw_pco_enfore->pco_enforce_ip = true;
+    sgw_pco_enfore->pco_enfore_dns_server = true;
+    subsetting = config_setting_get_member (setting_sgw, SGW_CONFIG_STRING_PCO_ENFORCE_SUB);
+
+    if (subsetting != NULL) {
+      // PCO IP enforce setting
+      if (config_setting_lookup_string (subsetting, SGW_CONFIG_STRING_PCO_IP_ENFORCE, (const char **)&astring))
+      {
+        if (!strcasecmp("yes", astring))
+          sgw_pco_enfore->pco_enforce_ip = true;
+        else
+          sgw_pco_enfore->pco_enforce_ip = false;
+      } else{
+        OAILOG_INFO (LOG_SPGW_APP, "Can not find subsetting %s. Setting to default values\n", SGW_CONFIG_STRING_PCO_IP_ENFORCE);
+      }
+      // PCO DNS Server enforce setting
+      if (config_setting_lookup_string (subsetting, SGW_CONFIG_STRING_PCO_DNS_SERVER_ENFORCE, (const char **)&astring))
+      {
+        if (!strcasecmp("yes", astring))
+          sgw_pco_enfore->pco_enfore_dns_server = true;
+        else
+          sgw_pco_enfore->pco_enfore_dns_server = false;
+      } else{
+        OAILOG_INFO (LOG_SPGW_APP, "Can not find subsetting %s. Setting to default values\n", SGW_CONFIG_STRING_PCO_DNS_SERVER_ENFORCE);
+      }
+    } else {
+      OAILOG_INFO (LOG_SPGW_APP, "Can not find subsetting %s. Setting to default values\n", SGW_CONFIG_STRING_PCO_ENFORCE_SUB);
+    }
+    return;
+}
+
 int
 spgw_config_init (
   char *lib_config_file_name_pP,
@@ -386,12 +425,13 @@ spgw_config_init (
         OAILOG_INFO (LOG_SPGW_APP, "Parsing configuration file found sgw_ipv4_address_for_S11: %s/%d on %s\n", inet_ntoa (in_addr_var), config_pP->sgw_config.ipv4.sgw_ip_netmask_for_S11, config_pP->sgw_config.ipv4.sgw_interface_name_for_S11);
       }
 
-      if (config_setting_lookup_int (subsetting, SGW_CONFIG_STRING_SGW_PORT_FOR_S1U_S12_S4_UP, &sgw_udp_port_for_S1u_S12_S4_up)
-        ) {
+      if (config_setting_lookup_int (subsetting, SGW_CONFIG_STRING_SGW_PORT_FOR_S1U_S12_S4_UP, &sgw_udp_port_for_S1u_S12_S4_up)) {
         config_pP->sgw_config.sgw_udp_port_for_S1u_S12_S4_up = sgw_udp_port_for_S1u_S12_S4_up;
       } else {
         config_pP->sgw_config.sgw_udp_port_for_S1u_S12_S4_up = sgw_udp_port_for_S1u_S12_S4_up;
       }
+
+      spgw_config_set_pco_option(setting_sgw, &config_pP->sgw_config.sgw_pco_enforce);
     }
   }
 
