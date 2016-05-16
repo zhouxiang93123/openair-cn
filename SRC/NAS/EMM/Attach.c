@@ -1947,8 +1947,24 @@ _emm_attach_update (
             _emm_data.conf.tai_list.tai[i].tac);
       }
     }
-    ctx->tai_list.n_tais = j;
+
     ctx->tai_list.list_type = TRACKING_AREA_IDENTITY_LIST_TYPE_ONE_PLMN_CONSECUTIVE_TACS;
+    ctx->tai_list.n_tais = j;
+    for (j = 1; j < ctx->tai_list.n_tais; j++) {
+       if ((ctx->tai_list.tai[j].plmn.mcc_digit1 != ctx->tai_list.tai[j-1].plmn.mcc_digit1) ||
+           (ctx->tai_list.tai[j].plmn.mcc_digit2 != ctx->tai_list.tai[j-1].plmn.mcc_digit2) ||
+           (ctx->tai_list.tai[j].plmn.mcc_digit3 != ctx->tai_list.tai[j-1].plmn.mcc_digit3) ||
+           (ctx->tai_list.tai[j].plmn.mnc_digit1 != ctx->tai_list.tai[j-1].plmn.mnc_digit1) ||
+           (ctx->tai_list.tai[j].plmn.mnc_digit2 != ctx->tai_list.tai[j-1].plmn.mnc_digit2)) { 
+        ctx->tai_list.list_type = TRACKING_AREA_IDENTITY_LIST_TYPE_MANY_PLMNS;
+        break;
+      }
+      if (ctx->tai_list.tai[j].tac != (ctx->tai_list.tai[j-1].tac+ 1)) {
+        ctx->tai_list.list_type = TRACKING_AREA_IDENTITY_LIST_TYPE_ONE_PLMN_NON_CONSECUTIVE_TACS;
+        break;
+      }
+    }
+    OAILOG_INFO (LOG_NAS_EMM, "tai_list type set to %d\n", ctx->tai_list.list_type);
   }
   /*
    * The IMSI if provided by the UE
@@ -1957,7 +1973,6 @@ _emm_attach_update (
     if (!ctx->imsi) {
       ctx->imsi = (imsi_t *) MALLOC_CHECK (sizeof (imsi_t));
     }
-
     if (ctx->imsi) {
       memcpy (ctx->imsi, imsi, sizeof (imsi_t));
     } else {
