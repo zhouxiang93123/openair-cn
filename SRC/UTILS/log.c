@@ -148,7 +148,7 @@ void* log_task (__attribute__ ((unused)) void *args_p)
 {
   MessageDef                             *received_message_p = NULL;
   long                                    timer_id = 0;
-
+  int					 rc;
   itti_mark_task_ready (TASK_LOG);
   log_start_use ();
   timer_setup (LOG_FLUSH_PERIOD_SEC,
@@ -189,6 +189,10 @@ void* log_task (__attribute__ ((unused)) void *args_p)
         }
         break;
       }
+      // Freeing the memory allocated from the memory pool
+      rc = itti_free (ITTI_MSG_ORIGIN_ID (received_message_p), received_message_p);
+      AssertFatal (rc == EXIT_SUCCESS, "Failed to free memory (%d)!\n", rc);
+      received_message_p = NULL;
     }
   }
 
