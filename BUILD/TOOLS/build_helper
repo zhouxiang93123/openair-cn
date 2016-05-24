@@ -480,8 +480,8 @@ install_freediameter_from_source() {
     cd /tmp
     echo "Downloading 1.2.0 freeDiameter archive"
     rm -rf /tmp/1.2.0.tar.gz* /tmp/freeDiameter-1.2.0
-    wget http://www.freediameter.net/hg/freeDiameter/archive/1.2.0.tar.gz 
-    tar xzf 1.2.0.tar.gz
+    wget  http://pkgs.fedoraproject.org/repo/pkgs/freeDiameter/freeDiameter-1.2.0.tar.gz/d33592d35b68a2e07cb47e755a8f0afe/freeDiameter-1.2.0.tar.gz
+    tar xzf freeDiameter-1.2.0.tar.gz
     cd freeDiameter-1.2.0
     patch -p1 < $OPENAIRCN_DIR/SRC/S6A/freediameter/freediameter-1.2.0.patch 
     mkdir build
